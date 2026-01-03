@@ -23,6 +23,20 @@ import CustomerDashboard from "./pages/customer/CustomerDashboard";
 import Cart from "./pages/customer/Cart";
 import Wishlist from "./pages/customer/Wishlist";
 
+// Seller Pages
+import SellerDashboard from "./pages/seller/SellerDashboard";
+import SellerProducts from "./pages/seller/SellerProducts";
+import SellerOrders from "./pages/seller/SellerOrders";
+import SellerDiscounts from "./pages/seller/SellerDiscounts";
+import SellerReviews from "./pages/seller/SellerReviews";
+
+// Admin Pages
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminOrders from "./pages/admin/AdminOrders";
+import AdminDiscounts from "./pages/admin/AdminDiscounts";
+import AdminAwareness from "./pages/admin/AdminAwareness";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +65,20 @@ const App = () => (
               <Route path="/customer/dashboard" element={<ProtectedRoute allowedRoles={["customer"]}><CustomerDashboard /></ProtectedRoute>} />
               <Route path="/customer/cart" element={<Cart />} />
               <Route path="/customer/wishlist" element={<Wishlist />} />
+
+              {/* Seller Routes */}
+              <Route path="/seller/dashboard" element={<ProtectedRoute allowedRoles={["seller"]}><SellerDashboard /></ProtectedRoute>} />
+              <Route path="/seller/products" element={<ProtectedRoute allowedRoles={["seller"]}><SellerProducts /></ProtectedRoute>} />
+              <Route path="/seller/orders" element={<ProtectedRoute allowedRoles={["seller"]}><SellerOrders /></ProtectedRoute>} />
+              <Route path="/seller/discounts" element={<ProtectedRoute allowedRoles={["seller"]}><SellerDiscounts /></ProtectedRoute>} />
+              <Route path="/seller/reviews" element={<ProtectedRoute allowedRoles={["seller"]}><SellerReviews /></ProtectedRoute>} />
+
+              {/* Admin Routes */}
+              <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute allowedRoles={["admin"]}><AdminUsers /></ProtectedRoute>} />
+              <Route path="/admin/orders" element={<ProtectedRoute allowedRoles={["admin"]}><AdminOrders /></ProtectedRoute>} />
+              <Route path="/admin/discounts" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDiscounts /></ProtectedRoute>} />
+              <Route path="/admin/awareness" element={<ProtectedRoute allowedRoles={["admin"]}><AdminAwareness /></ProtectedRoute>} />
 
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
