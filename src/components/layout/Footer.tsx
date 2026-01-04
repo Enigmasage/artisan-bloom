@@ -58,10 +58,10 @@ const Footer = () => {
             <h3 className="font-heading text-lg font-semibold mb-4">Customer Service</h3>
             <ul className="space-y-3">
               {[
-                { name: "Track Order", path: "/customer/orders" },
-                { name: "Returns & Refunds", path: "#" },
-                { name: "Shipping Info", path: "#" },
-                { name: "FAQs", path: "#" },
+                { name: "Track Order", path: "/support/track-order" },
+                { name: "Returns & Refunds", path: "/support/returns-refunds" },
+                { name: "Shipping Info", path: "/support/shipping-info" },
+                { name: "FAQs", path: "/support/faqs" },
               ].map((link, idx) => (
                 <li key={idx}>
                   <Link

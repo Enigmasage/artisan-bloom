@@ -1,7 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { User, Package, Heart, ShoppingCart, LogOut } from "lucide-react";
+import { User, Package, Heart, ShoppingCart, LogOut, RefreshCcw, Truck, HelpCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
@@ -15,6 +16,13 @@ const CustomerDashboard = () => {
     { icon: Package, label: "My Orders", path: "/customer/orders", count: 3 },
     { icon: Heart, label: "Wishlist", path: "/customer/wishlist", count: wishlist.length },
     { icon: ShoppingCart, label: "Cart", path: "/customer/cart", count: totalItems },
+  ];
+
+  const supportLinks = [
+    { icon: Search, label: "Track Order", path: "/support/track-order" },
+    { icon: RefreshCcw, label: "Returns & Refunds", path: "/support/returns-refunds" },
+    { icon: Truck, label: "Shipping Info", path: "/support/shipping-info" },
+    { icon: HelpCircle, label: "FAQs", path: "/support/faqs" },
   ];
 
   return (
@@ -47,6 +55,25 @@ const CustomerDashboard = () => {
               </Link>
             ))}
           </div>
+
+          {/* Customer Service Section */}
+          <Card className="heritage-card mb-8">
+            <CardHeader>
+              <CardTitle className="text-lg font-heading">Customer Service</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {supportLinks.map((link) => (
+                  <Link key={link.path} to={link.path}>
+                    <Button variant="ghost" className="w-full h-auto py-4 flex flex-col gap-2">
+                      <link.icon className="h-5 w-5 text-primary" />
+                      <span className="text-sm">{link.label}</span>
+                    </Button>
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
           <div className="flex gap-4">
             <Link to="/products"><Button variant="heritage">Continue Shopping</Button></Link>

@@ -154,6 +154,41 @@ const AdminDashboard = () => {
           </Link>
         </div>
 
+        {/* Customer Service Section */}
+        <Card className="heritage-card mb-8">
+          <CardHeader>
+            <CardTitle className="text-lg font-display">Customer Service</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Link to="/support/track-order">
+                <Button variant="ghost" className="w-full h-auto py-4 flex flex-col gap-2">
+                  <Package className="h-5 w-5 text-primary" />
+                  <span className="text-sm">Track Order</span>
+                </Button>
+              </Link>
+              <Link to="/support/returns-refunds">
+                <Button variant="ghost" className="w-full h-auto py-4 flex flex-col gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  <span className="text-sm">Returns & Refunds</span>
+                </Button>
+              </Link>
+              <Link to="/support/shipping-info">
+                <Button variant="ghost" className="w-full h-auto py-4 flex flex-col gap-2">
+                  <ShoppingBag className="h-5 w-5 text-primary" />
+                  <span className="text-sm">Shipping Info</span>
+                </Button>
+              </Link>
+              <Link to="/support/faqs">
+                <Button variant="ghost" className="w-full h-auto py-4 flex flex-col gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <span className="text-sm">FAQs</span>
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Analytics Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="lg:col-span-2">
