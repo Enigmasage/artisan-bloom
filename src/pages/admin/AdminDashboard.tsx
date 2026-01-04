@@ -5,6 +5,9 @@ import Footer from "@/components/layout/Footer";
 import StatsCard from "@/components/common/StatsCard";
 import OrderStatusBadge from "@/components/common/OrderStatusBadge";
 import PaymentStatusBadge from "@/components/common/PaymentStatusBadge";
+import RevenueChart from "@/components/charts/RevenueChart";
+import OrdersChart from "@/components/charts/OrdersChart";
+import TopProductsChart from "@/components/charts/TopProductsChart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -29,6 +32,31 @@ import { mockOrders, getTotalRevenue } from "@/data/orders";
 import { mockUsers, getTotalSellers, getTotalCustomers } from "@/data/users";
 import { mockDiscounts, getActiveDiscounts } from "@/data/discounts";
 import { useAuth } from "@/context/AuthContext";
+
+// Mock chart data for admin
+const monthlyRevenueData = [
+  { name: "Aug", revenue: 45000 },
+  { name: "Sep", revenue: 52000 },
+  { name: "Oct", revenue: 68000 },
+  { name: "Nov", revenue: 85000 },
+  { name: "Dec", revenue: 92000 },
+  { name: "Jan", revenue: 78000 },
+];
+
+const weeklyOrdersData = [
+  { name: "Week 1", orders: 28 },
+  { name: "Week 2", orders: 35 },
+  { name: "Week 3", orders: 42 },
+  { name: "Week 4", orders: 38 },
+];
+
+const topProductsData = [
+  { name: "Silk Saree", value: 45 },
+  { name: "Embroidered Clutch", value: 32 },
+  { name: "Block Print Dupatta", value: 28 },
+  { name: "Brass Diya Set", value: 22 },
+  { name: "Handmade Jewelry", value: 18 },
+];
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -126,53 +154,17 @@ const AdminDashboard = () => {
           </Link>
         </div>
 
-        {/* Recent Orders & Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="heritage-card lg:col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg font-display">Recent Orders</CardTitle>
-              <Link to="/admin/orders">
-                <Button variant="ghost" size="sm">View All</Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Seller</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Payment</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">{order.id}</TableCell>
-                      <TableCell>{order.customerName}</TableCell>
-                      <TableCell>{order.sellerName}</TableCell>
-                      <TableCell>₹{order.totalAmount.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <OrderStatusBadge status={order.status} />
-                      </TableCell>
-                      <TableCell>
-                        <PaymentStatusBadge status={order.paymentStatus} />
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+        {/* Analytics Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="lg:col-span-2">
+            <RevenueChart title="Monthly Revenue Trends" data={monthlyRevenueData} />
+          </div>
+          <TopProductsChart title="Top Selling Products" data={topProductsData} />
+        </div>
 
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <OrdersChart title="Weekly Order Volume" data={weeklyOrdersData} />
+          
           <Card className="heritage-card">
             <CardHeader>
               <CardTitle className="text-lg font-display flex items-center gap-2">
@@ -208,6 +200,52 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Recent Orders */}
+        <Card className="heritage-card">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg font-display">Recent Orders</CardTitle>
+            <Link to="/admin/orders">
+              <Button variant="ghost" size="sm">View All</Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order ID</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Seller</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentOrders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-medium">{order.id}</TableCell>
+                    <TableCell>{order.customerName}</TableCell>
+                    <TableCell>{order.sellerName}</TableCell>
+                    <TableCell>₹{order.totalAmount.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <OrderStatusBadge status={order.status} />
+                    </TableCell>
+                    <TableCell>
+                      <PaymentStatusBadge status={order.paymentStatus} />
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="icon">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </main>
 
       <Footer />

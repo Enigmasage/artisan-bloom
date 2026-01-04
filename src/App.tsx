@@ -22,6 +22,9 @@ import Register from "./pages/public/Register";
 import CustomerDashboard from "./pages/customer/CustomerDashboard";
 import Cart from "./pages/customer/Cart";
 import Wishlist from "./pages/customer/Wishlist";
+import Checkout from "./pages/customer/Checkout";
+import OrderSuccess from "./pages/customer/OrderSuccess";
+import CustomerOrders from "./pages/customer/CustomerOrders";
 
 // Seller Pages
 import SellerDashboard from "./pages/seller/SellerDashboard";
@@ -65,6 +68,9 @@ const App = () => (
               <Route path="/customer/dashboard" element={<ProtectedRoute allowedRoles={["customer"]}><CustomerDashboard /></ProtectedRoute>} />
               <Route path="/customer/cart" element={<Cart />} />
               <Route path="/customer/wishlist" element={<Wishlist />} />
+              <Route path="/customer/checkout" element={<ProtectedRoute allowedRoles={["customer"]}><Checkout /></ProtectedRoute>} />
+              <Route path="/customer/orders" element={<ProtectedRoute allowedRoles={["customer"]}><CustomerOrders /></ProtectedRoute>} />
+              <Route path="/order/success" element={<OrderSuccess />} />
 
               {/* Seller Routes */}
               <Route path="/seller/dashboard" element={<ProtectedRoute allowedRoles={["seller"]}><SellerDashboard /></ProtectedRoute>} />
