@@ -5,6 +5,9 @@ import Footer from "@/components/layout/Footer";
 import StatsCard from "@/components/common/StatsCard";
 import OrderStatusBadge from "@/components/common/OrderStatusBadge";
 import PaymentStatusBadge from "@/components/common/PaymentStatusBadge";
+import RevenueChart from "@/components/charts/RevenueChart";
+import OrdersChart from "@/components/charts/OrdersChart";
+import TopProductsChart from "@/components/charts/TopProductsChart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -27,6 +30,31 @@ import {
 import { mockOrders, getOrdersBySeller, getTotalRevenue } from "@/data/orders";
 import { products } from "@/data/products";
 import { useAuth } from "@/context/AuthContext";
+
+// Mock chart data for seller
+const revenueData = [
+  { name: "Week 1", revenue: 12000 },
+  { name: "Week 2", revenue: 18500 },
+  { name: "Week 3", revenue: 14200 },
+  { name: "Week 4", revenue: 22000 },
+];
+
+const ordersData = [
+  { name: "Mon", orders: 4 },
+  { name: "Tue", orders: 6 },
+  { name: "Wed", orders: 3 },
+  { name: "Thu", orders: 8 },
+  { name: "Fri", orders: 5 },
+  { name: "Sat", orders: 9 },
+  { name: "Sun", orders: 7 },
+];
+
+const topProductsData = [
+  { name: "Silk Saree", value: 12 },
+  { name: "Clutch Bag", value: 8 },
+  { name: "Block Print Dupatta", value: 6 },
+  { name: "Brass Diya", value: 5 },
+];
 
 const SellerDashboard = () => {
   const { user } = useAuth();
@@ -123,51 +151,17 @@ const SellerDashboard = () => {
           </Link>
         </div>
 
-        {/* Recent Orders & Pending Payments */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="heritage-card lg:col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg font-display">Recent Orders</CardTitle>
-              <Link to="/seller/orders">
-                <Button variant="ghost" size="sm">View All</Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Payment</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">{order.id}</TableCell>
-                      <TableCell>{order.customerName}</TableCell>
-                      <TableCell>₹{order.totalAmount.toLocaleString()}</TableCell>
-                      <TableCell>
-                        <OrderStatusBadge status={order.status} />
-                      </TableCell>
-                      <TableCell>
-                        <PaymentStatusBadge status={order.paymentStatus} />
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+        {/* Analytics Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="lg:col-span-2">
+            <RevenueChart title="Weekly Revenue" data={revenueData} />
+          </div>
+          <TopProductsChart title="Top Selling Products" data={topProductsData} />
+        </div>
 
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <OrdersChart title="Daily Orders" data={ordersData} />
+          
           <Card className="heritage-card">
             <CardHeader>
               <CardTitle className="text-lg font-display flex items-center gap-2">
@@ -191,6 +185,50 @@ const SellerDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Recent Orders */}
+        <Card className="heritage-card">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg font-display">Recent Orders</CardTitle>
+            <Link to="/seller/orders">
+              <Button variant="ghost" size="sm">View All</Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order ID</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentOrders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-medium">{order.id}</TableCell>
+                    <TableCell>{order.customerName}</TableCell>
+                    <TableCell>₹{order.totalAmount.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <OrderStatusBadge status={order.status} />
+                    </TableCell>
+                    <TableCell>
+                      <PaymentStatusBadge status={order.paymentStatus} />
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="icon">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </main>
 
       <Footer />
