@@ -40,6 +40,12 @@ import AdminOrders from "./pages/admin/AdminOrders";
 import AdminDiscounts from "./pages/admin/AdminDiscounts";
 import AdminAwareness from "./pages/admin/AdminAwareness";
 
+// Support Pages
+import ReturnsRefunds from "./pages/support/ReturnsRefunds";
+import ShippingInfo from "./pages/support/ShippingInfo";
+import FAQs from "./pages/support/FAQs";
+import TrackOrder from "./pages/support/TrackOrder";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,12 +70,18 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
 
+              {/* Support Routes (Public) */}
+              <Route path="/support/returns-refunds" element={<ReturnsRefunds />} />
+              <Route path="/support/shipping-info" element={<ShippingInfo />} />
+              <Route path="/support/faqs" element={<FAQs />} />
+              <Route path="/support/track-order" element={<TrackOrder />} />
+
               {/* Customer Routes */}
               <Route path="/customer/dashboard" element={<ProtectedRoute allowedRoles={["customer"]}><CustomerDashboard /></ProtectedRoute>} />
               <Route path="/customer/cart" element={<Cart />} />
               <Route path="/customer/wishlist" element={<Wishlist />} />
-              <Route path="/customer/checkout" element={<ProtectedRoute allowedRoles={["customer"]}><Checkout /></ProtectedRoute>} />
-              <Route path="/customer/orders" element={<ProtectedRoute allowedRoles={["customer"]}><CustomerOrders /></ProtectedRoute>} />
+              <Route path="/customer/checkout" element={<ProtectedRoute allowedRoles={["customer", "seller", "admin"]}><Checkout /></ProtectedRoute>} />
+              <Route path="/customer/orders" element={<ProtectedRoute allowedRoles={["customer", "seller", "admin"]}><CustomerOrders /></ProtectedRoute>} />
               <Route path="/order/success" element={<OrderSuccess />} />
 
               {/* Seller Routes */}
