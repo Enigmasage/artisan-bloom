@@ -302,10 +302,25 @@ const CustomerOrders = () => {
                   </div>
                 </div>
 
-                {selectedOrder.shippingAddress && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Delivery Address</p>
-                    <p className="font-medium">{selectedOrder.shippingAddress}</p>
+                {/* Delivery Details for Seller Delivery */}
+                {selectedOrder.deliveryMethod === "seller_delivery" && (
+                  <div className="p-4 rounded-lg bg-muted/50 border border-border space-y-3">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" />
+                      Delivery Details
+                    </h4>
+                    {selectedOrder.shippingAddress && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Address</p>
+                        <p className="font-medium">{selectedOrder.shippingAddress}</p>
+                      </div>
+                    )}
+                    {selectedOrder.customerPhone && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Phone Number</p>
+                        <p className="font-medium">{selectedOrder.customerPhone}</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
