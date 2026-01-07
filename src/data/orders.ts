@@ -3,6 +3,7 @@ export interface Order {
   customerId: string;
   customerName: string;
   customerEmail: string;
+  customerPhone?: string;
   sellerId: string;
   sellerName: string;
   products: {
@@ -29,6 +30,7 @@ export const mockOrders: Order[] = [
     customerId: "cust1",
     customerName: "Priya Sharma",
     customerEmail: "priya@example.com",
+    customerPhone: "+91 98765 43210",
     sellerId: "seller1",
     sellerName: "Lakshmi Devi",
     products: [
@@ -55,6 +57,7 @@ export const mockOrders: Order[] = [
     customerId: "cust2",
     customerName: "Anjali Verma",
     customerEmail: "anjali@example.com",
+    customerPhone: "+91 87654 32109",
     sellerId: "seller1",
     sellerName: "Lakshmi Devi",
     products: [
@@ -113,6 +116,7 @@ export const mockOrders: Order[] = [
     customerId: "cust4",
     customerName: "Sunita Reddy",
     customerEmail: "sunita@example.com",
+    customerPhone: "+91 76543 21098",
     sellerId: "seller1",
     sellerName: "Lakshmi Devi",
     products: [
@@ -139,6 +143,7 @@ export const mockOrders: Order[] = [
     customerId: "cust1",
     customerName: "Priya Sharma",
     customerEmail: "priya@example.com",
+    customerPhone: "+91 98765 43210",
     sellerId: "seller2",
     sellerName: "Geeta Kumari",
     products: [

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -10,8 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { mockDiscounts, getActiveDiscounts, Discount } from "@/data/discounts";
 import {
   MapPin,
   Truck,
@@ -21,7 +23,28 @@ import {
   Smartphone,
   Package,
   ShieldCheck,
+  Tag,
+  Percent,
+  CheckCircle2,
 } from "lucide-react";
+
+interface AppliedDiscount {
+  discount: Discount;
+  appliedAmount: number;
+  productId?: string;
+  productName?: string;
+}
+
+interface ProductDiscountInfo {
+  productId: string;
+  productName: string;
+  originalPrice: number;
+  quantity: number;
+  applicableDiscounts: Discount[];
+  bestDiscount: Discount | null;
+  discountedPrice: number;
+  savings: number;
+}
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -35,13 +58,110 @@ const Checkout = () => {
   const [phone, setPhone] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Get active discounts
+  const activeDiscounts = useMemo(() => getActiveDiscounts(mockDiscounts), []);
+
+  // Calculate discounts for each product and find the best one
+  const productDiscountInfo = useMemo((): ProductDiscountInfo[] => {
+    return items.map((item) => {
+      const productTotal = item.product.price * item.quantity;
+      
+      // Find all applicable discounts for this product
+      const applicableDiscounts = activeDiscounts.filter((discount) => {
+        // Check scope
+        if (discount.scope === "product" && discount.productId !== item.product.id) {
+          return false;
+        }
+        if (discount.scope === "category" && discount.categoryId !== item.product.category.toLowerCase()) {
+          return false;
+        }
+        // Check min order value (apply to product level for simplicity)
+        if (discount.minOrderValue && productTotal < discount.minOrderValue) {
+          return false;
+        }
+        // Check usage limit
+        if (discount.usageLimit && discount.usedCount >= discount.usageLimit) {
+          return false;
+        }
+        return true;
+      });
+
+      // Calculate discount amount for each applicable discount
+      const discountsWithAmounts = applicableDiscounts.map((discount) => {
+        let discountAmount: number;
+        if (discount.type === "percentage") {
+          discountAmount = (productTotal * discount.value) / 100;
+          if (discount.maxDiscount) {
+            discountAmount = Math.min(discountAmount, discount.maxDiscount);
+          }
+        } else {
+          discountAmount = discount.value;
+        }
+        return { discount, discountAmount };
+      });
+
+      // Find the best (highest) discount
+      const bestDiscountInfo = discountsWithAmounts.reduce<{ discount: Discount; discountAmount: number } | null>(
+        (best, current) => {
+          if (!best || current.discountAmount > best.discountAmount) {
+            return current;
+          }
+          return best;
+        },
+        null
+      );
+
+      const savings = bestDiscountInfo?.discountAmount || 0;
+
+      return {
+        productId: item.product.id,
+        productName: item.product.name,
+        originalPrice: productTotal,
+        quantity: item.quantity,
+        applicableDiscounts,
+        bestDiscount: bestDiscountInfo?.discount || null,
+        discountedPrice: productTotal - savings,
+        savings,
+      };
+    });
+  }, [items, activeDiscounts]);
+
+  // Calculate total savings and final price
+  const totalSavings = useMemo(() => {
+    return productDiscountInfo.reduce((sum, info) => sum + info.savings, 0);
+  }, [productDiscountInfo]);
+
+  const deliveryCharge = deliveryMethod === "seller_delivery" ? 50 : 0;
+  const subtotalAfterDiscount = totalPrice - totalSavings;
+  const finalTotal = subtotalAfterDiscount + deliveryCharge;
+
+  // Get all unique applied discounts for display
+  const appliedDiscounts = useMemo((): AppliedDiscount[] => {
+    const discountMap = new Map<string, AppliedDiscount>();
+    
+    productDiscountInfo.forEach((info) => {
+      if (info.bestDiscount && info.savings > 0) {
+        const existingDiscount = discountMap.get(info.bestDiscount.id);
+        if (existingDiscount) {
+          existingDiscount.appliedAmount += info.savings;
+        } else {
+          discountMap.set(info.bestDiscount.id, {
+            discount: info.bestDiscount,
+            appliedAmount: info.savings,
+            productId: info.productId,
+            productName: info.productName,
+          });
+        }
+      }
+    });
+
+    return Array.from(discountMap.values());
+  }, [productDiscountInfo]);
+
   if (items.length === 0) {
     navigate("/customer/cart");
     return null;
   }
-
-  const deliveryCharge = deliveryMethod === "seller_delivery" ? 50 : 0;
-  const finalTotal = totalPrice + deliveryCharge;
 
   const handlePlaceOrder = () => {
     setIsProcessing(true);
@@ -55,9 +175,17 @@ const Checkout = () => {
           totalAmount: finalTotal,
           deliveryMethod,
           paymentMethod,
+          totalSavings,
         },
       });
     }, 1500);
+  };
+
+  const getDiscountLabel = (discount: Discount) => {
+    if (discount.type === "percentage") {
+      return `${discount.value}% OFF`;
+    }
+    return `₹${discount.value} OFF`;
   };
 
   return (
@@ -221,25 +349,85 @@ const Checkout = () => {
                 <CardTitle className="text-lg font-display">Order Summary</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Items */}
+                {/* Items with discount info */}
                 <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {items.map((item) => (
-                    <div key={item.product.id} className="flex gap-3">
-                      <img
-                        src={item.product.image}
-                        alt={item.product.name}
-                        className="w-16 h-16 rounded-lg object-cover"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm truncate">{item.product.name}</h4>
-                        <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
-                        <p className="text-sm font-medium text-primary">
-                          ₹{(item.product.price * item.quantity).toLocaleString()}
-                        </p>
+                  {productDiscountInfo.map((info) => {
+                    const item = items.find((i) => i.product.id === info.productId);
+                    if (!item) return null;
+
+                    return (
+                      <div key={info.productId} className="flex gap-3">
+                        <img
+                          src={item.product.image}
+                          alt={item.product.name}
+                          className="w-16 h-16 rounded-lg object-cover"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm truncate">{item.product.name}</h4>
+                          <p className="text-xs text-muted-foreground">Qty: {info.quantity}</p>
+                          <div className="flex items-center gap-2">
+                            {info.savings > 0 ? (
+                              <>
+                                <p className="text-sm font-medium text-primary">
+                                  ₹{info.discountedPrice.toLocaleString()}
+                                </p>
+                                <p className="text-xs text-muted-foreground line-through">
+                                  ₹{info.originalPrice.toLocaleString()}
+                                </p>
+                              </>
+                            ) : (
+                              <p className="text-sm font-medium text-primary">
+                                ₹{info.originalPrice.toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                          {info.bestDiscount && info.savings > 0 && (
+                            <Badge variant="secondary" className="text-xs mt-1 gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              {getDiscountLabel(info.bestDiscount)} applied
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Available Offers Section */}
+                {appliedDiscounts.length > 0 && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium flex items-center gap-2">
+                        <Tag className="h-4 w-4 text-primary" />
+                        Offers Applied
+                      </h4>
+                      <div className="space-y-2">
+                        {appliedDiscounts.map((applied) => (
+                          <div
+                            key={applied.discount.id}
+                            className="flex items-center justify-between p-2 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Percent className="h-4 w-4 text-green-600" />
+                              <div>
+                                <p className="text-xs font-medium text-green-700 dark:text-green-400">
+                                  {applied.discount.label || applied.discount.code}
+                                </p>
+                                <p className="text-xs text-green-600 dark:text-green-500">
+                                  {getDiscountLabel(applied.discount)}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-sm font-semibold text-green-700 dark:text-green-400">
+                              -₹{applied.appliedAmount.toLocaleString()}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </>
+                )}
 
                 <Separator />
 
@@ -249,6 +437,15 @@ const Checkout = () => {
                     <span className="text-muted-foreground">Subtotal</span>
                     <span>₹{totalPrice.toLocaleString()}</span>
                   </div>
+                  {totalSavings > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span className="flex items-center gap-1">
+                        <Tag className="h-3 w-3" />
+                        Discount Savings
+                      </span>
+                      <span>-₹{totalSavings.toLocaleString()}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Delivery</span>
                     <span>{deliveryCharge === 0 ? "FREE" : `₹${deliveryCharge}`}</span>
@@ -258,6 +455,11 @@ const Checkout = () => {
                     <span>Total</span>
                     <span className="text-primary">₹{finalTotal.toLocaleString()}</span>
                   </div>
+                  {totalSavings > 0 && (
+                    <p className="text-xs text-center text-green-600 font-medium">
+                      🎉 You're saving ₹{totalSavings.toLocaleString()} on this order!
+                    </p>
+                  )}
                 </div>
 
                 <Button
