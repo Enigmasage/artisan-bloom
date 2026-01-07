@@ -17,6 +17,9 @@ import About from "./pages/public/About";
 import Awareness from "./pages/public/Awareness";
 import Login from "./pages/public/Login";
 import Register from "./pages/public/Register";
+import ForgotPassword from "./pages/public/ForgotPassword";
+import VerifyOTP from "./pages/public/VerifyOTP";
+import ResetPassword from "./pages/public/ResetPassword";
 
 // Customer Pages
 import CustomerDashboard from "./pages/customer/CustomerDashboard";
@@ -69,6 +72,9 @@ const App = () => (
               <Route path="/awareness" element={<Awareness />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/verify-otp" element={<VerifyOTP />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
 
               {/* Support Routes (Public) */}
               <Route path="/support/returns-refunds" element={<ReturnsRefunds />} />
