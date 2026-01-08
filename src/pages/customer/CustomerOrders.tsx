@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OrderStatusBadge from "@/components/common/OrderStatusBadge";
 import PaymentStatusBadge from "@/components/common/PaymentStatusBadge";
 import {
@@ -18,6 +18,9 @@ import {
   ArrowLeft,
   Eye,
   XCircle,
+  RotateCcw,
+  RefreshCw,
+  Ban,
 } from "lucide-react";
 import { mockOrders, Order } from "@/data/orders";
 import {
@@ -26,10 +29,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 const CustomerOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [activeTab, setActiveTab] = useState("all");
+  const [actionDialog, setActionDialog] = useState<{
+    type: "cancel" | "exchange" | "return" | null;
+    order: Order | null;
+  }>({ type: null, order: null });
+  const { toast } = useToast();
 
   // Filter orders for current customer (mock: show all for demo)
   const customerOrders = mockOrders;
@@ -68,6 +87,53 @@ const CustomerOrders = () => {
       default:
         return "0%";
     }
+  };
+
+  // Check if order can be cancelled (before dispatch)
+  const canCancel = (order: Order) => {
+    return order.status === "pending" || order.status === "confirmed";
+  };
+
+  // Check if order can be exchanged before dispatch
+  const canExchangeBeforeDispatch = (order: Order) => {
+    return order.status === "pending" || order.status === "confirmed";
+  };
+
+  // Check if order has returnable products (for post-delivery exchange)
+  const hasReturnableProducts = (order: Order) => {
+    return order.products.some(product => product.isReturnable);
+  };
+
+  // Check if exchange is available after delivery
+  const canExchangeAfterDelivery = (order: Order) => {
+    return order.status === "delivered" && hasReturnableProducts(order);
+  };
+
+  const handleCancelOrder = () => {
+    toast({
+      title: "Order Cancellation Requested",
+      description: `Your cancellation request for Order #${actionDialog.order?.id} has been submitted. You'll receive a confirmation soon.`,
+    });
+    setActionDialog({ type: null, order: null });
+  };
+
+  const handleExchangeRequest = () => {
+    const isPreDispatch = actionDialog.order && (actionDialog.order.status === "pending" || actionDialog.order.status === "confirmed");
+    toast({
+      title: "Exchange Request Submitted",
+      description: isPreDispatch 
+        ? `Your exchange request for Order #${actionDialog.order?.id} has been submitted. The seller will contact you shortly.`
+        : `Your exchange request for Order #${actionDialog.order?.id} has been submitted. Please follow the return instructions sent to your email.`,
+    });
+    setActionDialog({ type: null, order: null });
+  };
+
+  const getReturnableProductsList = (order: Order) => {
+    return order.products.filter(p => p.isReturnable);
+  };
+
+  const getNonReturnableProductsList = (order: Order) => {
+    return order.products.filter(p => !p.isReturnable);
   };
 
   return (
@@ -146,12 +212,20 @@ const CustomerOrders = () => {
                       {/* Products */}
                       <div className="flex gap-3 mb-4 overflow-x-auto">
                         {order.products.map((product, idx) => (
-                          <div key={idx} className="flex-shrink-0">
+                          <div key={idx} className="flex-shrink-0 relative">
                             <img
                               src={product.image}
                               alt={product.productName}
                               className="w-20 h-20 rounded-lg object-cover border border-border"
                             />
+                            {product.isReturnable && (
+                              <Badge 
+                                variant="secondary" 
+                                className="absolute -top-2 -right-2 text-[10px] px-1.5 py-0.5"
+                              >
+                                Returnable
+                              </Badge>
+                            )}
                           </div>
                         ))}
                         <div className="flex flex-col justify-center">
@@ -216,7 +290,7 @@ const CustomerOrders = () => {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex lg:flex-col gap-2 lg:justify-start">
+                    <div className="flex lg:flex-col gap-2 lg:justify-start flex-wrap">
                       <Button
                         variant="outline"
                         size="sm"
@@ -226,6 +300,45 @@ const CustomerOrders = () => {
                         <Eye className="h-4 w-4" />
                         View Details
                       </Button>
+
+                      {/* Cancel Order - Before Dispatch */}
+                      {canCancel(order) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                          onClick={() => setActionDialog({ type: "cancel", order })}
+                        >
+                          <Ban className="h-4 w-4" />
+                          Cancel Order
+                        </Button>
+                      )}
+
+                      {/* Exchange - Before Dispatch */}
+                      {canExchangeBeforeDispatch(order) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => setActionDialog({ type: "exchange", order })}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                          Request Exchange
+                        </Button>
+                      )}
+
+                      {/* Exchange/Return - After Delivery (only if returnable) */}
+                      {canExchangeAfterDelivery(order) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-2"
+                          onClick={() => setActionDialog({ type: "return", order })}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                          Return/Exchange
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -263,7 +376,14 @@ const CustomerOrders = () => {
                           className="w-16 h-16 rounded-lg object-cover"
                         />
                         <div className="flex-1">
-                          <h5 className="font-medium">{product.productName}</h5>
+                          <div className="flex items-center gap-2">
+                            <h5 className="font-medium">{product.productName}</h5>
+                            {product.isReturnable && (
+                              <Badge variant="secondary" className="text-xs">
+                                Returnable
+                              </Badge>
+                            )}
+                          </div>
                           <p className="text-sm text-muted-foreground">
                             Qty: {product.quantity} × ₹{product.price.toLocaleString()}
                           </p>
@@ -324,6 +444,44 @@ const CustomerOrders = () => {
                   </div>
                 )}
 
+                {/* Return Policy Info */}
+                {selectedOrder.status === "delivered" && (
+                  <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
+                    <h4 className="font-semibold mb-2 flex items-center gap-2">
+                      <RotateCcw className="h-4 w-4 text-accent" />
+                      Return & Exchange Policy
+                    </h4>
+                    {hasReturnableProducts(selectedOrder) ? (
+                      <div className="space-y-2 text-sm">
+                        <p className="text-muted-foreground">
+                          The following items are eligible for return/exchange:
+                        </p>
+                        <ul className="list-disc list-inside text-muted-foreground">
+                          {getReturnableProductsList(selectedOrder).map((p, idx) => (
+                            <li key={idx}>{p.productName}</li>
+                          ))}
+                        </ul>
+                        {getNonReturnableProductsList(selectedOrder).length > 0 && (
+                          <>
+                            <p className="text-destructive/80 mt-2">
+                              Non-returnable items:
+                            </p>
+                            <ul className="list-disc list-inside text-destructive/80">
+                              {getNonReturnableProductsList(selectedOrder).map((p, idx) => (
+                                <li key={idx}>{p.productName}</li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        This order contains no returnable items.
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Total */}
                 <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
                   <div className="flex justify-between items-center">
@@ -333,10 +491,155 @@ const CustomerOrders = () => {
                     </span>
                   </div>
                 </div>
+
+                {/* Action Buttons in Dialog */}
+                {selectedOrder.status !== "cancelled" && (
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {canCancel(selectedOrder) && (
+                      <Button
+                        variant="outline"
+                        className="gap-2 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                        onClick={() => {
+                          setSelectedOrder(null);
+                          setActionDialog({ type: "cancel", order: selectedOrder });
+                        }}
+                      >
+                        <Ban className="h-4 w-4" />
+                        Cancel Order
+                      </Button>
+                    )}
+                    {canExchangeBeforeDispatch(selectedOrder) && (
+                      <Button
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => {
+                          setSelectedOrder(null);
+                          setActionDialog({ type: "exchange", order: selectedOrder });
+                        }}
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                        Request Exchange
+                      </Button>
+                    )}
+                    {canExchangeAfterDelivery(selectedOrder) && (
+                      <Button
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => {
+                          setSelectedOrder(null);
+                          setActionDialog({ type: "return", order: selectedOrder });
+                        }}
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        Return/Exchange
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Cancel Order Alert Dialog */}
+        <AlertDialog 
+          open={actionDialog.type === "cancel"} 
+          onOpenChange={(open) => !open && setActionDialog({ type: null, order: null })}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Cancel Order #{actionDialog.order?.id}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to cancel this order? This action cannot be undone.
+                {actionDialog.order?.paymentStatus === "paid" && (
+                  <span className="block mt-2 text-primary">
+                    Your payment will be refunded within 5-7 business days.
+                  </span>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep Order</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive hover:bg-destructive/90"
+                onClick={handleCancelOrder}
+              >
+                Yes, Cancel Order
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Exchange Request Alert Dialog (Before Dispatch) */}
+        <AlertDialog 
+          open={actionDialog.type === "exchange"} 
+          onOpenChange={(open) => !open && setActionDialog({ type: null, order: null })}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Request Exchange for Order #{actionDialog.order?.id}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You can request an exchange before your order is dispatched. The seller will 
+                contact you to discuss available alternatives.
+                <span className="block mt-2 text-muted-foreground">
+                  Note: Exchange is subject to product availability.
+                </span>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleExchangeRequest}>
+                Submit Exchange Request
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Return/Exchange Alert Dialog (After Delivery) */}
+        <AlertDialog 
+          open={actionDialog.type === "return"} 
+          onOpenChange={(open) => !open && setActionDialog({ type: null, order: null })}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Return/Exchange for Order #{actionDialog.order?.id}</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div>
+                  <p>You can request a return or exchange for eligible items in this order.</p>
+                  {actionDialog.order && (
+                    <div className="mt-3 space-y-2">
+                      <p className="font-medium text-foreground">Eligible for return/exchange:</p>
+                      <ul className="list-disc list-inside text-sm">
+                        {getReturnableProductsList(actionDialog.order).map((p, idx) => (
+                          <li key={idx}>{p.productName}</li>
+                        ))}
+                      </ul>
+                      {getNonReturnableProductsList(actionDialog.order).length > 0 && (
+                        <>
+                          <p className="font-medium text-destructive mt-2">Not eligible:</p>
+                          <ul className="list-disc list-inside text-sm text-destructive/80">
+                            {getNonReturnableProductsList(actionDialog.order).map((p, idx) => (
+                              <li key={idx}>{p.productName}</li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  <p className="mt-3 text-muted-foreground text-sm">
+                    Return instructions will be sent to your email after confirmation.
+                  </p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleExchangeRequest}>
+                Submit Return Request
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
 
       <Footer />
