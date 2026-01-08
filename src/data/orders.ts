@@ -12,6 +12,7 @@ export interface Order {
     quantity: number;
     price: number;
     image: string;
+    isReturnable?: boolean;
   }[];
   totalAmount: number;
   status: "pending" | "confirmed" | "dispatched" | "delivered" | "cancelled";
@@ -39,7 +40,8 @@ export const mockOrders: Order[] = [
         productName: "Handwoven Silk Saree",
         quantity: 1,
         price: 4500,
-        image: "/src/assets/products/silk-saree.jpg"
+        image: "/src/assets/products/silk-saree.jpg",
+        isReturnable: true
       }
     ],
     totalAmount: 4500,
@@ -66,7 +68,8 @@ export const mockOrders: Order[] = [
         productName: "Embroidered Clutch Bag",
         quantity: 2,
         price: 850,
-        image: "/src/assets/products/embroidered-clutch.jpg"
+        image: "/src/assets/products/embroidered-clutch.jpg",
+        isReturnable: false
       }
     ],
     totalAmount: 1700,
@@ -92,14 +95,16 @@ export const mockOrders: Order[] = [
         productName: "Block Print Dupatta",
         quantity: 1,
         price: 650,
-        image: "/src/assets/products/block-print-dupatta.jpg"
+        image: "/src/assets/products/block-print-dupatta.jpg",
+        isReturnable: true
       },
       {
         productId: "4",
         productName: "Traditional Brass Diya Set",
         quantity: 3,
         price: 450,
-        image: "/src/assets/products/brass-diya.jpg"
+        image: "/src/assets/products/brass-diya.jpg",
+        isReturnable: false
       }
     ],
     totalAmount: 2000,
@@ -125,7 +130,8 @@ export const mockOrders: Order[] = [
         productName: "Handwoven Silk Saree",
         quantity: 2,
         price: 4500,
-        image: "/src/assets/products/silk-saree.jpg"
+        image: "/src/assets/products/silk-saree.jpg",
+        isReturnable: true
       }
     ],
     totalAmount: 9000,
@@ -152,7 +158,8 @@ export const mockOrders: Order[] = [
         productName: "Embroidered Clutch Bag",
         quantity: 1,
         price: 850,
-        image: "/src/assets/products/embroidered-clutch.jpg"
+        image: "/src/assets/products/embroidered-clutch.jpg",
+        isReturnable: true
       }
     ],
     totalAmount: 850,
