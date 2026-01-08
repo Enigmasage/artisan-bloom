@@ -22,20 +22,22 @@ const Awareness = () => {
           <div className="container">
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {awarenessArticles.map((article) => (
-                <article key={article.id} className="heritage-card group">
-                  <div className="aspect-video overflow-hidden">
-                    <img src={article.image} alt={article.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  </div>
-                  <div className="p-6">
-                    <span className="heritage-badge text-xs">{article.category}</span>
-                    <h3 className="font-heading text-xl font-semibold mt-3 group-hover:text-primary transition-colors">{article.title}</h3>
-                    <p className="text-muted-foreground text-sm mt-2 line-clamp-2">{article.excerpt}</p>
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-                      <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" />{article.readTime} min read</span>
-                      <span className="text-primary text-sm font-medium flex items-center gap-1">Read More <ArrowRight className="h-3 w-3" /></span>
+                <Link key={article.id} to={`/awareness/${article.id}`} className="block">
+                  <article className="heritage-card group cursor-pointer">
+                    <div className="aspect-video overflow-hidden">
+                      <img src={article.image} alt={article.title} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     </div>
-                  </div>
-                </article>
+                    <div className="p-6">
+                      <span className="heritage-badge text-xs">{article.category}</span>
+                      <h3 className="font-heading text-xl font-semibold mt-3 group-hover:text-primary transition-colors">{article.title}</h3>
+                      <p className="text-muted-foreground text-sm mt-2 line-clamp-2">{article.excerpt}</p>
+                      <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" />{article.readTime} min read</span>
+                        <span className="text-primary text-sm font-medium flex items-center gap-1">Read More <ArrowRight className="h-3 w-3" /></span>
+                      </div>
+                    </div>
+                  </article>
+                </Link>
               ))}
             </div>
           </div>

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -14,14 +15,42 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, FileText, Edit, Trash2, Eye } from "lucide-react";
+import { Plus, FileText, Edit, Trash2, Eye, Upload, ImageIcon, X } from "lucide-react";
 import { awarenessArticles, AwarenessArticle } from "@/data/awareness";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminAwareness = () => {
   const [articles, setArticles] = useState<AwarenessArticle[]>(awarenessArticles);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload an image file.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleAddArticle = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -32,13 +61,14 @@ const AdminAwareness = () => {
       title: formData.get("title") as string,
       excerpt: formData.get("excerpt") as string,
       content: contentText,
-      image: "/src/assets/hero-banner.jpg",
+      image: imagePreview || "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800",
       category: formData.get("category") as string,
       readTime: Math.ceil(contentText.split(" ").length / 200),
       publishedAt: new Date().toISOString().split("T")[0],
     };
     setArticles([newArticle, ...articles]);
     setIsAddDialogOpen(false);
+    setImagePreview(null);
     toast({
       title: "Article Published",
       description: "Your article is now live on the awareness page.",
@@ -92,6 +122,48 @@ const AdminAwareness = () => {
                     placeholder="e.g., Sustainability, Tradition"
                     required
                   />
+                </div>
+                {/* Image Upload */}
+                <div className="space-y-2">
+                  <Label>Featured Image</Label>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  {imagePreview ? (
+                    <div className="relative rounded-lg overflow-hidden border border-border">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-40 object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-8 w-8"
+                        onClick={removeImage}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary transition-colors"
+                    >
+                      <ImageIcon className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        Click to upload featured image
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        PNG, JPG, WEBP up to 5MB
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="excerpt">Excerpt</Label>
@@ -151,10 +223,12 @@ const AdminAwareness = () => {
                   <span>{article.readTime} min read</span>
                 </div>
                 <div className="flex gap-2 mt-4 pt-4 border-t">
-                  <Button variant="outline" size="sm" className="flex-1 gap-1">
-                    <Eye className="h-3 w-3" />
-                    View
-                  </Button>
+                  <Link to={`/awareness/${article.id}`} className="flex-1">
+                    <Button variant="outline" size="sm" className="w-full gap-1">
+                      <Eye className="h-3 w-3" />
+                      View
+                    </Button>
+                  </Link>
                   <Button variant="outline" size="sm" className="flex-1 gap-1">
                     <Edit className="h-3 w-3" />
                     Edit

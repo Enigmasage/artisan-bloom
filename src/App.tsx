@@ -15,6 +15,7 @@ import Artisans from "./pages/public/Artisans";
 import ArtisanDetail from "./pages/public/ArtisanDetail";
 import About from "./pages/public/About";
 import Awareness from "./pages/public/Awareness";
+import AwarenessArticle from "./pages/public/AwarenessArticle";
 import Login from "./pages/public/Login";
 import Register from "./pages/public/Register";
 import ForgotPassword from "./pages/public/ForgotPassword";
@@ -70,6 +71,7 @@ const App = () => (
               <Route path="/artisans/:id" element={<ArtisanDetail />} />
               <Route path="/about" element={<About />} />
               <Route path="/awareness" element={<Awareness />} />
+              <Route path="/awareness/:id" element={<AwarenessArticle />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
