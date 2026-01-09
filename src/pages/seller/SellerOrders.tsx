@@ -27,8 +27,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, Eye, Truck, Package, CheckCircle } from "lucide-react";
-import { mockOrders, Order, getOrdersBySeller } from "@/data/orders";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Search, Eye, Truck, Package, CheckCircle, AlertTriangle, XCircle, Check, X } from "lucide-react";
+import { mockOrders, Order, getOrdersBySeller, CustomerRequestStatus } from "@/data/orders";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 
@@ -39,7 +49,13 @@ const SellerOrders = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [requestAction, setRequestAction] = useState<{ order: Order; action: "approve" | "reject" } | null>(null);
   const { toast } = useToast();
+
+  // Get orders with pending customer requests
+  const ordersWithPendingRequests = orders.filter(
+    (order) => order.customerRequest?.status === "pending"
+  );
 
   const filteredOrders = orders.filter((order) => {
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
@@ -63,7 +79,90 @@ const SellerOrders = () => {
     });
   };
 
+  const handleRequestAction = (order: Order, action: "approve" | "reject") => {
+    const requestType = order.customerRequest?.type;
+    const newRequestStatus: CustomerRequestStatus = action === "approve" ? "approved" : "rejected";
+    
+    let newOrderStatus = order.status;
+    let newPaymentStatus = order.paymentStatus;
+    
+    if (action === "approve") {
+      if (requestType === "cancel") {
+        newOrderStatus = "cancelled";
+        if (order.paymentStatus === "paid") {
+          newPaymentStatus = "refunded";
+        }
+      }
+      // For exchange/return, status might change to a processing state
+      // but for now we keep the order status and just mark request as approved
+    }
+
+    setOrders(
+      orders.map((o) =>
+        o.id === order.id
+          ? {
+              ...o,
+              status: newOrderStatus,
+              paymentStatus: newPaymentStatus,
+              customerRequest: {
+                ...o.customerRequest!,
+                status: newRequestStatus,
+                resolvedAt: new Date().toISOString(),
+              },
+              updatedAt: new Date().toISOString(),
+            }
+          : o
+      )
+    );
+
+    toast({
+      title: action === "approve" ? "Request Approved" : "Request Rejected",
+      description: `${requestType?.charAt(0).toUpperCase()}${requestType?.slice(1)} request for order ${order.id} has been ${action === "approve" ? "approved" : "rejected"}.`,
+    });
+    
+    setRequestAction(null);
+  };
+
+  const getRequestBadgeVariant = (type: string) => {
+    switch (type) {
+      case "cancel":
+        return "destructive";
+      case "exchange":
+        return "secondary";
+      case "return":
+        return "outline";
+      default:
+        return "default";
+    }
+  };
+
   const getStatusActions = (order: Order) => {
+    // If there's a pending request, show approve/reject instead
+    if (order.customerRequest?.status === "pending") {
+      return (
+        <div className="flex gap-1">
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1 text-green-600 hover:text-green-700 hover:bg-green-50"
+            onClick={() => setRequestAction({ order, action: "approve" })}
+          >
+            <Check className="h-3 w-3" />
+            Approve
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+            onClick={() => setRequestAction({ order, action: "reject" })}
+          >
+            <X className="h-3 w-3" />
+            Reject
+          </Button>
+        </div>
+      );
+    }
+
     switch (order.status) {
       case "pending":
         return (
@@ -117,6 +216,68 @@ const SellerOrders = () => {
           </p>
         </div>
 
+        {/* Pending Customer Requests Alert */}
+        {ordersWithPendingRequests.length > 0 && (
+          <Card className="mb-6 border-amber-200 bg-amber-50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-display flex items-center gap-2 text-amber-800">
+                <AlertTriangle className="h-5 w-5" />
+                Pending Customer Requests ({ordersWithPendingRequests.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-3">
+                {ordersWithPendingRequests.map((order) => (
+                  <div
+                    key={order.id}
+                    className="flex items-center justify-between p-3 bg-white rounded-lg border border-amber-100"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{order.id}</span>
+                          <Badge variant={getRequestBadgeVariant(order.customerRequest!.type)}>
+                            {order.customerRequest!.type.charAt(0).toUpperCase() + 
+                              order.customerRequest!.type.slice(1)} Request
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {order.customerName} • {new Date(order.customerRequest!.requestedAt).toLocaleDateString()}
+                        </p>
+                        {order.customerRequest?.reason && (
+                          <p className="text-sm text-muted-foreground mt-1 italic">
+                            "{order.customerRequest.reason}"
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-green-600 hover:text-green-700 hover:bg-green-50"
+                        onClick={() => setRequestAction({ order, action: "approve" })}
+                      >
+                        <Check className="h-3 w-3" />
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => setRequestAction({ order, action: "reject" })}
+                      >
+                        <X className="h-3 w-3" />
+                        Reject
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Filters */}
         <Card className="heritage-card mb-6">
           <CardContent className="pt-6">
@@ -163,14 +324,14 @@ const SellerOrders = () => {
                   <TableHead>Products</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Payment</TableHead>
+                  <TableHead>Request</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredOrders.map((order) => (
-                  <TableRow key={order.id}>
+                  <TableRow key={order.id} className={order.customerRequest?.status === "pending" ? "bg-amber-50/50" : ""}>
                     <TableCell className="font-medium">{order.id}</TableCell>
                     <TableCell>
                       <div>
@@ -199,7 +360,26 @@ const SellerOrders = () => {
                       <OrderStatusBadge status={order.status} />
                     </TableCell>
                     <TableCell>
-                      <PaymentStatusBadge status={order.paymentStatus} />
+                      {order.customerRequest ? (
+                        <div className="flex flex-col gap-1">
+                          <Badge variant={getRequestBadgeVariant(order.customerRequest.type)}>
+                            {order.customerRequest.type.charAt(0).toUpperCase() + 
+                              order.customerRequest.type.slice(1)}
+                          </Badge>
+                          <span className={`text-xs ${
+                            order.customerRequest.status === "pending" 
+                              ? "text-amber-600" 
+                              : order.customerRequest.status === "approved"
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}>
+                            {order.customerRequest.status.charAt(0).toUpperCase() + 
+                              order.customerRequest.status.slice(1)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {new Date(order.createdAt).toLocaleDateString()}
@@ -233,6 +413,71 @@ const SellerOrders = () => {
             </DialogHeader>
             {selectedOrder && (
               <div className="space-y-6">
+                {/* Customer Request Section */}
+                {selectedOrder.customerRequest && (
+                  <div className="p-4 rounded-lg border border-amber-200 bg-amber-50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <AlertTriangle className="h-4 w-4 text-amber-600" />
+                          <span className="font-medium text-amber-800">
+                            Customer {selectedOrder.customerRequest.type.charAt(0).toUpperCase() + 
+                              selectedOrder.customerRequest.type.slice(1)} Request
+                          </span>
+                          <Badge 
+                            variant={
+                              selectedOrder.customerRequest.status === "pending" 
+                                ? "secondary" 
+                                : selectedOrder.customerRequest.status === "approved"
+                                ? "default"
+                                : "destructive"
+                            }
+                          >
+                            {selectedOrder.customerRequest.status.charAt(0).toUpperCase() + 
+                              selectedOrder.customerRequest.status.slice(1)}
+                          </Badge>
+                        </div>
+                        {selectedOrder.customerRequest.reason && (
+                          <p className="text-sm text-muted-foreground italic">
+                            "{selectedOrder.customerRequest.reason}"
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Requested on {new Date(selectedOrder.customerRequest.requestedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      {selectedOrder.customerRequest.status === "pending" && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 text-green-600 hover:text-green-700 hover:bg-green-50"
+                            onClick={() => {
+                              setSelectedOrder(null);
+                              setRequestAction({ order: selectedOrder, action: "approve" });
+                            }}
+                          >
+                            <Check className="h-3 w-3" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => {
+                              setSelectedOrder(null);
+                              setRequestAction({ order: selectedOrder, action: "reject" });
+                            }}
+                          >
+                            <X className="h-3 w-3" />
+                            Reject
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-medium mb-2">Customer Info</h4>
@@ -240,6 +485,11 @@ const SellerOrders = () => {
                     <p className="text-sm text-muted-foreground">
                       {selectedOrder.customerEmail}
                     </p>
+                    {selectedOrder.customerPhone && (
+                      <p className="text-sm text-muted-foreground">
+                        {selectedOrder.customerPhone}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <h4 className="font-medium mb-2">Delivery Details</h4>
@@ -304,6 +554,47 @@ const SellerOrders = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Request Action Confirmation Dialog */}
+        <AlertDialog open={!!requestAction} onOpenChange={() => setRequestAction(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {requestAction?.action === "approve" ? "Approve" : "Reject"} {requestAction?.order.customerRequest?.type} Request?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {requestAction?.action === "approve" ? (
+                  requestAction?.order.customerRequest?.type === "cancel" ? (
+                    <>This will cancel order {requestAction?.order.id} and initiate a refund if payment was made.</>
+                  ) : (
+                    <>This will approve the {requestAction?.order.customerRequest?.type} request for order {requestAction?.order.id}. You'll need to coordinate with the customer for next steps.</>
+                  )
+                ) : (
+                  <>This will reject the {requestAction?.order.customerRequest?.type} request for order {requestAction?.order.id}. The customer will be notified.</>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className={requestAction?.action === "approve" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
+                onClick={() => requestAction && handleRequestAction(requestAction.order, requestAction.action)}
+              >
+                {requestAction?.action === "approve" ? (
+                  <>
+                    <Check className="h-4 w-4 mr-1" />
+                    Approve Request
+                  </>
+                ) : (
+                  <>
+                    <X className="h-4 w-4 mr-1" />
+                    Reject Request
+                  </>
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
 
       <Footer />
