@@ -1,3 +1,14 @@
+export type CustomerRequestType = "cancel" | "exchange" | "return";
+export type CustomerRequestStatus = "pending" | "approved" | "rejected";
+
+export interface CustomerRequest {
+  type: CustomerRequestType;
+  status: CustomerRequestStatus;
+  reason?: string;
+  requestedAt: string;
+  resolvedAt?: string;
+}
+
 export interface Order {
   id: string;
   customerId: string;
@@ -21,6 +32,7 @@ export interface Order {
   deliveryMethod: "self_pickup" | "seller_delivery";
   openBoxDelivery: boolean;
   shippingAddress?: string;
+  customerRequest?: CustomerRequest;
   createdAt: string;
   updatedAt: string;
 }
@@ -141,8 +153,48 @@ export const mockOrders: Order[] = [
     deliveryMethod: "seller_delivery",
     openBoxDelivery: true,
     shippingAddress: "789, Jubilee Hills, Hyderabad, Telangana",
+    customerRequest: {
+      type: "cancel",
+      status: "pending",
+      reason: "Changed my mind, found a better deal elsewhere",
+      requestedAt: "2026-01-03T10:00:00Z"
+    },
     createdAt: "2026-01-02T08:00:00Z",
     updatedAt: "2026-01-02T08:00:00Z"
+  },
+  {
+    id: "ORD006",
+    customerId: "cust2",
+    customerName: "Anjali Verma",
+    customerEmail: "anjali@example.com",
+    customerPhone: "+91 87654 32109",
+    sellerId: "seller1",
+    sellerName: "Lakshmi Devi",
+    products: [
+      {
+        productId: "1",
+        productName: "Handwoven Silk Saree",
+        quantity: 1,
+        price: 4500,
+        image: "/src/assets/products/silk-saree.jpg",
+        isReturnable: true
+      }
+    ],
+    totalAmount: 4500,
+    status: "delivered",
+    paymentStatus: "paid",
+    paymentMethod: "upi",
+    deliveryMethod: "seller_delivery",
+    openBoxDelivery: false,
+    shippingAddress: "456, Anna Nagar, Chennai, Tamil Nadu",
+    customerRequest: {
+      type: "exchange",
+      status: "pending",
+      reason: "Size doesn't fit properly, need a different size",
+      requestedAt: "2026-01-05T14:30:00Z"
+    },
+    createdAt: "2026-01-01T09:00:00Z",
+    updatedAt: "2026-01-04T16:00:00Z"
   },
   {
     id: "ORD005",
