@@ -21,6 +21,8 @@ import {
   RotateCcw,
   RefreshCw,
   Ban,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import { mockOrders, Order } from "@/data/orders";
 import {
@@ -40,22 +42,22 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
 
 const CustomerOrders = () => {
+  const [orders, setOrders] = useState<Order[]>(mockOrders);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [activeTab, setActiveTab] = useState("all");
   const [actionDialog, setActionDialog] = useState<{
     type: "cancel" | "exchange" | "return" | null;
     order: Order | null;
   }>({ type: null, order: null });
+  const [requestReason, setRequestReason] = useState("");
   const { toast } = useToast();
 
-  // Filter orders for current customer (mock: show all for demo)
-  const customerOrders = mockOrders;
-
   const filteredOrders = activeTab === "all" 
-    ? customerOrders 
-    : customerOrders.filter(order => order.status === activeTab);
+    ? orders 
+    : orders.filter(order => order.status === activeTab);
 
   const getStatusIcon = (status: Order["status"]) => {
     switch (status) {
@@ -89,14 +91,14 @@ const CustomerOrders = () => {
     }
   };
 
-  // Check if order can be cancelled (before dispatch)
+  // Check if order can be cancelled (before dispatch and no pending request)
   const canCancel = (order: Order) => {
-    return order.status === "pending" || order.status === "confirmed";
+    return (order.status === "pending" || order.status === "confirmed") && !order.customerRequest;
   };
 
   // Check if order can be exchanged before dispatch
   const canExchangeBeforeDispatch = (order: Order) => {
-    return order.status === "pending" || order.status === "confirmed";
+    return (order.status === "pending" || order.status === "confirmed") && !order.customerRequest;
   };
 
   // Check if order has returnable products (for post-delivery exchange)
@@ -106,26 +108,63 @@ const CustomerOrders = () => {
 
   // Check if exchange is available after delivery
   const canExchangeAfterDelivery = (order: Order) => {
-    return order.status === "delivered" && hasReturnableProducts(order);
+    return order.status === "delivered" && hasReturnableProducts(order) && !order.customerRequest;
   };
 
   const handleCancelOrder = () => {
+    if (!actionDialog.order) return;
+    
+    setOrders(prev => prev.map(order => 
+      order.id === actionDialog.order!.id 
+        ? { 
+            ...order, 
+            customerRequest: {
+              type: "cancel" as const,
+              status: "pending" as const,
+              reason: requestReason || "Customer requested cancellation",
+              requestedAt: new Date().toISOString()
+            },
+            updatedAt: new Date().toISOString() 
+          }
+        : order
+    ));
+    
     toast({
-      title: "Order Cancellation Requested",
-      description: `Your cancellation request for Order #${actionDialog.order?.id} has been submitted. You'll receive a confirmation soon.`,
+      title: "Cancellation Requested",
+      description: `Your cancellation request for Order #${actionDialog.order.id} has been submitted. The seller will review it shortly.`,
     });
     setActionDialog({ type: null, order: null });
+    setRequestReason("");
   };
 
-  const handleExchangeRequest = () => {
-    const isPreDispatch = actionDialog.order && (actionDialog.order.status === "pending" || actionDialog.order.status === "confirmed");
+  const handleExchangeRequest = (isReturn: boolean = false) => {
+    if (!actionDialog.order) return;
+    
+    const isPreDispatch = actionDialog.order.status === "pending" || actionDialog.order.status === "confirmed";
+    
+    setOrders(prev => prev.map(order => 
+      order.id === actionDialog.order!.id 
+        ? { 
+            ...order, 
+            customerRequest: {
+              type: isReturn ? "return" as const : "exchange" as const,
+              status: "pending" as const,
+              reason: requestReason || `Customer requested ${isReturn ? "return" : "exchange"}`,
+              requestedAt: new Date().toISOString()
+            },
+            updatedAt: new Date().toISOString() 
+          }
+        : order
+    ));
+    
     toast({
-      title: "Exchange Request Submitted",
+      title: isReturn ? "Return Requested" : "Exchange Requested",
       description: isPreDispatch 
-        ? `Your exchange request for Order #${actionDialog.order?.id} has been submitted. The seller will contact you shortly.`
-        : `Your exchange request for Order #${actionDialog.order?.id} has been submitted. Please follow the return instructions sent to your email.`,
+        ? `Your ${isReturn ? "return" : "exchange"} request for Order #${actionDialog.order.id} has been submitted. The seller will review it shortly.`
+        : `Your ${isReturn ? "return" : "exchange"} request for Order #${actionDialog.order.id} has been submitted. You'll be notified once the seller responds.`,
     });
     setActionDialog({ type: null, order: null });
+    setRequestReason("");
   };
 
   const getReturnableProductsList = (order: Order) => {
@@ -134,6 +173,142 @@ const CustomerOrders = () => {
 
   const getNonReturnableProductsList = (order: Order) => {
     return order.products.filter(p => !p.isReturnable);
+  };
+
+  // Get request status badge
+  const getRequestStatusBadge = (order: Order) => {
+    if (!order.customerRequest) return null;
+    
+    const { type, status } = order.customerRequest;
+    
+    if (type === "cancel") {
+      if (status === "pending") {
+        return (
+          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 gap-1">
+            <Clock className="h-3 w-3" />
+            Cancellation Requested
+          </Badge>
+        );
+      }
+      if (status === "approved") {
+        return (
+          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 gap-1">
+            <CheckCircle className="h-3 w-3" />
+            Cancelled
+          </Badge>
+        );
+      }
+      if (status === "rejected") {
+        return (
+          <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200 gap-1">
+            <XCircle className="h-3 w-3" />
+            Cancellation Rejected
+          </Badge>
+        );
+      }
+    }
+    
+    if (type === "exchange" || type === "return") {
+      const label = type === "return" ? "Return" : "Exchange";
+      if (status === "pending") {
+        return (
+          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 gap-1">
+            <Clock className="h-3 w-3" />
+            {label} Requested
+          </Badge>
+        );
+      }
+      if (status === "approved") {
+        return (
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 gap-1">
+            <CheckCircle className="h-3 w-3" />
+            {label} Approved
+          </Badge>
+        );
+      }
+      if (status === "rejected") {
+        return (
+          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 gap-1">
+            <XCircle className="h-3 w-3" />
+            {label} Rejected
+          </Badge>
+        );
+      }
+    }
+    
+    return null;
+  };
+
+  // Get request status message for display
+  const getRequestMessage = (order: Order) => {
+    if (!order.customerRequest) return null;
+    
+    const { type, status, reason } = order.customerRequest;
+    
+    if (type === "cancel") {
+      if (status === "pending") {
+        return {
+          icon: <Clock className="h-5 w-5 text-amber-500" />,
+          title: "Cancellation Request Pending",
+          message: "Your cancellation request is being reviewed by the seller. You'll be notified once it's processed.",
+          variant: "warning" as const,
+          reason
+        };
+      }
+      if (status === "approved") {
+        return {
+          icon: <CheckCircle className="h-5 w-5 text-green-500" />,
+          title: "Order Cancelled",
+          message: "Your order has been cancelled successfully. If you paid online, a refund will be processed within 5-7 business days.",
+          variant: "success" as const,
+          reason
+        };
+      }
+      if (status === "rejected") {
+        return {
+          icon: <XCircle className="h-5 w-5 text-red-500" />,
+          title: "Cancellation Rejected",
+          message: "The seller was unable to cancel your order. It may have already been dispatched or processed. Please contact support for assistance.",
+          variant: "error" as const,
+          reason
+        };
+      }
+    }
+    
+    if (type === "exchange" || type === "return") {
+      const label = type === "return" ? "Return" : "Exchange";
+      if (status === "pending") {
+        return {
+          icon: <Clock className="h-5 w-5 text-blue-500" />,
+          title: `${label} Request Pending`,
+          message: `Your ${label.toLowerCase()} request is being reviewed by the seller. You'll be notified once they respond.`,
+          variant: "info" as const,
+          reason
+        };
+      }
+      if (status === "approved") {
+        return {
+          icon: <CheckCircle className="h-5 w-5 text-green-500" />,
+          title: `${label} Approved`,
+          message: type === "return" 
+            ? "Your return has been approved. Please ship the item back within 7 days. A refund will be processed once we receive the item."
+            : "Your exchange has been approved. The seller will contact you to arrange the pickup and send the replacement item.",
+          variant: "success" as const,
+          reason
+        };
+      }
+      if (status === "rejected") {
+        return {
+          icon: <XCircle className="h-5 w-5 text-red-500" />,
+          title: `${label} Rejected`,
+          message: `Unfortunately, your ${label.toLowerCase()} request could not be approved. Please contact customer support for more details.`,
+          variant: "error" as const,
+          reason
+        };
+      }
+    }
+    
+    return null;
   };
 
   return (
@@ -203,11 +378,39 @@ const CustomerOrders = () => {
                             })}
                           </p>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <OrderStatusBadge status={order.status} />
                           <PaymentStatusBadge status={order.paymentStatus} />
+                          {getRequestStatusBadge(order)}
                         </div>
                       </div>
+
+                      {/* Request Status Message */}
+                      {(() => {
+                        const requestMessage = getRequestMessage(order);
+                        if (!requestMessage) return null;
+                        return (
+                          <div className={`mb-4 p-3 rounded-lg border ${
+                            requestMessage.variant === "warning" ? "bg-amber-50 border-amber-200" :
+                            requestMessage.variant === "success" ? "bg-green-50 border-green-200" :
+                            requestMessage.variant === "error" ? "bg-red-50 border-red-200" :
+                            "bg-blue-50 border-blue-200"
+                          }`}>
+                            <div className="flex items-start gap-3">
+                              {requestMessage.icon}
+                              <div className="flex-1">
+                                <h4 className="font-medium text-foreground text-sm">{requestMessage.title}</h4>
+                                <p className="text-xs text-muted-foreground mt-1">{requestMessage.message}</p>
+                                {requestMessage.reason && (
+                                  <p className="text-xs mt-2">
+                                    <span className="font-medium">Your reason:</span> {requestMessage.reason}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       {/* Products */}
                       <div className="flex gap-3 mb-4 overflow-x-auto">
@@ -588,7 +791,7 @@ const CustomerOrders = () => {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleExchangeRequest}>
+              <AlertDialogAction onClick={() => handleExchangeRequest(false)}>
                 Submit Exchange Request
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -634,7 +837,7 @@ const CustomerOrders = () => {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleExchangeRequest}>
+              <AlertDialogAction onClick={() => handleExchangeRequest(true)}>
                 Submit Return Request
               </AlertDialogAction>
             </AlertDialogFooter>
