@@ -29,9 +29,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Edit, Trash2, Eye } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, RotateCcw } from "lucide-react";
 import { products, Product } from "@/data/products";
 import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
 
 const SellerProducts = () => {
   const [productList, setProductList] = useState<Product[]>(products);
@@ -56,6 +57,7 @@ const SellerProducts = () => {
   const handleAddProduct = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const isReturnable = formData.get("isReturnable") === "on";
     const newProduct: Product = {
       id: `prod-${Date.now()}`,
       name: formData.get("name") as string,
@@ -69,15 +71,35 @@ const SellerProducts = () => {
       images: ["/src/assets/products/silk-saree.jpg"],
       tags: ["Handmade"],
       inStock: true,
+      isReturnable,
       rating: 0,
       reviews: 0,
-      returnPolicy: "7 days return available",
+      returnPolicy: isReturnable ? "7 days return policy" : "No return available",
     };
     setProductList([newProduct, ...productList]);
     setIsAddDialogOpen(false);
     toast({
       title: "Product Added",
       description: "Your new product is now listed.",
+    });
+  };
+
+  const handleToggleReturnable = (productId: string) => {
+    setProductList(prev => prev.map(p => 
+      p.id === productId 
+        ? { 
+            ...p, 
+            isReturnable: !p.isReturnable,
+            returnPolicy: !p.isReturnable ? "7 days return policy" : "No return available"
+          }
+        : p
+    ));
+    const product = productList.find(p => p.id === productId);
+    toast({
+      title: product?.isReturnable ? "Returns Disabled" : "Returns Enabled",
+      description: product?.isReturnable 
+        ? `${product.name} is now non-returnable.`
+        : `${product?.name} now accepts returns.`,
     });
   };
 
@@ -146,6 +168,13 @@ const SellerProducts = () => {
                     <Input id="material" name="material" required />
                   </div>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <Switch id="isReturnable" name="isReturnable" defaultChecked />
+                  <Label htmlFor="isReturnable" className="flex items-center gap-2">
+                    <RotateCcw className="h-4 w-4" />
+                    Allow Returns & Exchanges
+                  </Label>
+                </div>
                 <div className="flex justify-end gap-2">
                   <Button
                     type="button"
@@ -191,6 +220,7 @@ const SellerProducts = () => {
                   <TableHead>Category</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Stock</TableHead>
+                  <TableHead>Returnable</TableHead>
                   <TableHead>Tags</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -235,6 +265,17 @@ const SellerProducts = () => {
                       >
                         {product.inStock ? "In Stock" : "Out of Stock"}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Switch 
+                          checked={product.isReturnable} 
+                          onCheckedChange={() => handleToggleReturnable(product.id)}
+                        />
+                        <span className="text-xs text-muted-foreground">
+                          {product.isReturnable ? "Yes" : "No"}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1 flex-wrap">
