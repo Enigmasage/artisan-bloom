@@ -16,6 +16,7 @@ export interface Product {
   tags: string[];
   artisanId: string;
   inStock: boolean;
+  isReturnable: boolean;
   rating: number;
   reviews: number;
   returnPolicy: string;
@@ -35,6 +36,7 @@ export const products: Product[] = [
     tags: ["Handmade", "Eco-friendly", "Limited Edition"],
     artisanId: "1",
     inStock: true,
+    isReturnable: true,
     rating: 4.8,
     reviews: 124,
     returnPolicy: "7 days return policy",
@@ -52,6 +54,7 @@ export const products: Product[] = [
     tags: ["Handmade", "Festive", "Traditional"],
     artisanId: "2",
     inStock: true,
+    isReturnable: true,
     rating: 4.6,
     reviews: 89,
     returnPolicy: "7 days return policy",
@@ -68,6 +71,7 @@ export const products: Product[] = [
     tags: ["Handmade", "Eco-friendly", "Natural Dye"],
     artisanId: "1",
     inStock: true,
+    isReturnable: true,
     rating: 4.7,
     reviews: 156,
     returnPolicy: "7 days return policy",
@@ -84,9 +88,10 @@ export const products: Product[] = [
     tags: ["Handmade", "Spiritual", "Gift Item"],
     artisanId: "3",
     inStock: true,
+    isReturnable: false,
     rating: 4.9,
     reviews: 78,
-    returnPolicy: "7 days return policy",
+    returnPolicy: "No return available",
   },
   {
     id: "5",
@@ -101,6 +106,7 @@ export const products: Product[] = [
     tags: ["Handmade", "Traditional", "Festive"],
     artisanId: "2",
     inStock: true,
+    isReturnable: true,
     rating: 4.5,
     reviews: 92,
     returnPolicy: "7 days return policy",
@@ -117,9 +123,10 @@ export const products: Product[] = [
     tags: ["Handmade", "Eco-friendly", "Home Essentials"],
     artisanId: "1",
     inStock: true,
+    isReturnable: false,
     rating: 4.4,
     reviews: 45,
-    returnPolicy: "7 days return policy",
+    returnPolicy: "No return available",
   },
 ];
 

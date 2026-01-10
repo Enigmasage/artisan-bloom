@@ -26,6 +26,8 @@ import {
   Tag,
   Percent,
   CheckCircle2,
+  RotateCcw,
+  Ban,
 } from "lucide-react";
 
 interface AppliedDiscount {
@@ -357,11 +359,28 @@ const Checkout = () => {
 
                     return (
                       <div key={info.productId} className="flex gap-3">
-                        <img
-                          src={item.product.image}
-                          alt={item.product.name}
-                          className="w-16 h-16 rounded-lg object-cover"
-                        />
+                        <div className="relative">
+                          <img
+                            src={item.product.image}
+                            alt={item.product.name}
+                            className="w-16 h-16 rounded-lg object-cover"
+                          />
+                          {item.product.isReturnable ? (
+                            <Badge 
+                              variant="secondary" 
+                              className="absolute -top-2 -right-2 text-[10px] px-1 py-0.5 bg-green-100 text-green-700"
+                            >
+                              <RotateCcw className="h-2.5 w-2.5" />
+                            </Badge>
+                          ) : (
+                            <Badge 
+                              variant="secondary" 
+                              className="absolute -top-2 -right-2 text-[10px] px-1 py-0.5 bg-gray-100 text-gray-600"
+                            >
+                              <Ban className="h-2.5 w-2.5" />
+                            </Badge>
+                          )}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm truncate">{item.product.name}</h4>
                           <p className="text-xs text-muted-foreground">Qty: {info.quantity}</p>
@@ -381,12 +400,20 @@ const Checkout = () => {
                               </p>
                             )}
                           </div>
-                          {info.bestDiscount && info.savings > 0 && (
-                            <Badge variant="secondary" className="text-xs mt-1 gap-1">
-                              <CheckCircle2 className="h-3 w-3" />
-                              {getDiscountLabel(info.bestDiscount)} applied
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {info.bestDiscount && info.savings > 0 && (
+                              <Badge variant="secondary" className="text-xs gap-1">
+                                <CheckCircle2 className="h-3 w-3" />
+                                {getDiscountLabel(info.bestDiscount)} applied
+                              </Badge>
+                            )}
+                            <Badge 
+                              variant="outline" 
+                              className={`text-[10px] ${item.product.isReturnable ? "text-green-600 border-green-200" : "text-gray-500 border-gray-200"}`}
+                            >
+                              {item.product.isReturnable ? "Returnable" : "Non-returnable"}
                             </Badge>
-                          )}
+                          </div>
                         </div>
                       </div>
                     );
