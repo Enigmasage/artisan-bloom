@@ -22,6 +22,33 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+// ============================================================
+// DEMO ONLY: Unavailable product for testing availability UI
+// This product ID does NOT exist in products.ts, so it will
+// appear as "Unavailable" in Cart/Wishlist. Remove after demo.
+// ============================================================
+const DEMO_UNAVAILABLE_PRODUCT: Product = {
+  id: "demo-deleted-999",
+  name: "Vintage Kalamkari Wall Hanging (DEMO - Deleted by Seller)",
+  description: "This product was removed by the seller and is used for demo purposes.",
+  price: 2500,
+  image: "/placeholder.svg",
+  images: ["/placeholder.svg"],
+  category: "Home Decor",
+  material: "Cotton",
+  tags: ["Demo", "Unavailable"],
+  artisanId: "1",
+  inStock: true,
+  isReturnable: false,
+  rating: 4.5,
+  reviews: 0,
+  returnPolicy: "No return available",
+};
+
+// Set to true to inject demo unavailable items into cart/wishlist
+const ENABLE_DEMO_UNAVAILABLE = true;
+// ============================================================
+
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<Product[]>([]);
@@ -29,12 +56,25 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const storedCart = localStorage.getItem("banacrafts_cart");
     const storedWishlist = localStorage.getItem("banacrafts_wishlist");
-    if (storedCart) {
-      setItems(JSON.parse(storedCart));
+    
+    let parsedCart: CartItem[] = storedCart ? JSON.parse(storedCart) : [];
+    let parsedWishlist: Product[] = storedWishlist ? JSON.parse(storedWishlist) : [];
+
+    // DEMO: Inject unavailable product if not already present
+    if (ENABLE_DEMO_UNAVAILABLE) {
+      const demoInCart = parsedCart.some(item => item.product.id === DEMO_UNAVAILABLE_PRODUCT.id);
+      const demoInWishlist = parsedWishlist.some(p => p.id === DEMO_UNAVAILABLE_PRODUCT.id);
+      
+      if (!demoInCart) {
+        parsedCart = [...parsedCart, { product: DEMO_UNAVAILABLE_PRODUCT, quantity: 1 }];
+      }
+      if (!demoInWishlist) {
+        parsedWishlist = [...parsedWishlist, DEMO_UNAVAILABLE_PRODUCT];
+      }
     }
-    if (storedWishlist) {
-      setWishlist(JSON.parse(storedWishlist));
-    }
+
+    setItems(parsedCart);
+    setWishlist(parsedWishlist);
   }, []);
 
   useEffect(() => {
