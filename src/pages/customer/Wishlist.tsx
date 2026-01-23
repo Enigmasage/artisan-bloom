@@ -1,13 +1,23 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Heart, ShoppingCart } from "lucide-react";
+import { Heart, ShoppingCart, AlertTriangle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useCart } from "@/context/CartContext";
+import { getProductById } from "@/data/products";
 
 const Wishlist = () => {
   const { wishlist, removeFromWishlist, addToCart } = useCart();
+  
+  // Check availability against source data
+  const itemsWithAvailability = wishlist.map(product => ({
+    product,
+    isAvailable: !!getProductById(product.id)
+  }));
+  
+  const availableItems = itemsWithAvailability.filter(item => item.isAvailable);
+  const unavailableItems = itemsWithAvailability.filter(item => !item.isAvailable);
 
   if (wishlist.length === 0) {
     return (
@@ -31,9 +41,31 @@ const Wishlist = () => {
       <Navbar />
       <main className="flex-1 py-8">
         <div className="container">
-          <h1 className="font-heading text-3xl font-bold mb-8">My Wishlist ({wishlist.length} items)</h1>
+          <h1 className="font-heading text-3xl font-bold mb-8">My Wishlist ({availableItems.length} items)</h1>
+          
+          {/* Unavailable items warning */}
+          {unavailableItems.length > 0 && (
+            <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-xl mb-6">
+              <div className="flex items-center gap-2 text-destructive mb-2">
+                <AlertTriangle className="h-5 w-5" />
+                <span className="font-semibold">Some items are no longer available</span>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">These items have been removed by the seller.</p>
+              {unavailableItems.map(({ product }) => (
+                <div key={product.id} className="flex items-center justify-between py-2 opacity-60">
+                  <div className="flex items-center gap-3">
+                    <img src={product.image} alt={product.name} className="h-12 w-12 rounded object-cover grayscale" />
+                    <span className="text-sm line-through">{product.name}</span>
+                    <span className="text-xs bg-destructive/20 text-destructive px-2 py-0.5 rounded">Unavailable</span>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => removeFromWishlist(product.id)}><Trash2 className="h-4 w-4" /></Button>
+                </div>
+              ))}
+            </div>
+          )}
+          
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {wishlist.map((product) => (
+            {availableItems.map(({ product }) => (
               <div key={product.id} className="heritage-card">
                 <div className="aspect-square overflow-hidden">
                   <Link to={`/products/${product.id}`}><img src={product.image} alt={product.name} className="h-full w-full object-cover hover:scale-105 transition-transform" /></Link>

@@ -1,13 +1,24 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useCart } from "@/context/CartContext";
+import { getProductById } from "@/data/products";
 
 const Cart = () => {
-  const { items, updateQuantity, removeFromCart, totalPrice, clearCart } = useCart();
+  const { items, updateQuantity, removeFromCart } = useCart();
+  
+  // Check availability against source data
+  const itemsWithAvailability = items.map(item => ({
+    ...item,
+    isAvailable: !!getProductById(item.product.id)
+  }));
+  
+  const availableItems = itemsWithAvailability.filter(item => item.isAvailable);
+  const unavailableItems = itemsWithAvailability.filter(item => !item.isAvailable);
+  const totalPrice = availableItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
   if (items.length === 0) {
     return (
@@ -34,7 +45,29 @@ const Cart = () => {
           <h1 className="font-heading text-3xl font-bold mb-8">Shopping Cart</h1>
           <div className="grid gap-8 lg:grid-cols-3">
             <div className="lg:col-span-2 space-y-4">
-              {items.map(({ product, quantity }) => (
+              {/* Unavailable items warning */}
+              {unavailableItems.length > 0 && (
+                <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-xl">
+                  <div className="flex items-center gap-2 text-destructive mb-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    <span className="font-semibold">Some items are no longer available</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">These items have been removed by the seller and won't be included in checkout.</p>
+                  {unavailableItems.map(({ product }) => (
+                    <div key={product.id} className="flex items-center justify-between py-2 opacity-60">
+                      <div className="flex items-center gap-3">
+                        <img src={product.image} alt={product.name} className="h-12 w-12 rounded object-cover grayscale" />
+                        <span className="text-sm line-through">{product.name}</span>
+                        <span className="text-xs bg-destructive/20 text-destructive px-2 py-0.5 rounded">Unavailable</span>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => removeFromCart(product.id)}><Trash2 className="h-4 w-4" /></Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Available items */}
+              {availableItems.map(({ product, quantity }) => (
                 <div key={product.id} className="flex gap-4 p-4 bg-card rounded-xl border border-border">
                   <img src={product.image} alt={product.name} className="h-24 w-24 rounded-lg object-cover" />
                   <div className="flex-1">

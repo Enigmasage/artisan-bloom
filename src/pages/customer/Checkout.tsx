@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { mockDiscounts, getActiveDiscounts, Discount } from "@/data/discounts";
+import { getProductById } from "@/data/products";
 import {
   MapPin,
   Truck,
@@ -50,8 +51,15 @@ interface ProductDiscountInfo {
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, clearCart } = useCart();
   const { user } = useAuth();
+
+  // Filter to only available items
+  const availableItems = useMemo(() => 
+    items.filter(item => !!getProductById(item.product.id)), 
+    [items]
+  );
+  const totalPrice = availableItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
   const [deliveryMethod, setDeliveryMethod] = useState<"self_pickup" | "seller_delivery">("seller_delivery");
   const [paymentMethod, setPaymentMethod] = useState<"upi" | "cash">("upi");
@@ -63,9 +71,9 @@ const Checkout = () => {
   // Get active discounts
   const activeDiscounts = useMemo(() => getActiveDiscounts(mockDiscounts), []);
 
-  // Calculate discounts for each product and find the best one
+  // Calculate discounts for each available product and find the best one
   const productDiscountInfo = useMemo((): ProductDiscountInfo[] => {
-    return items.map((item) => {
+    return availableItems.map((item) => {
       const productTotal = item.product.price * item.quantity;
       
       // Find all applicable discounts for this product
@@ -126,7 +134,7 @@ const Checkout = () => {
         savings,
       };
     });
-  }, [items, activeDiscounts]);
+  }, [availableItems, activeDiscounts]);
 
   // Calculate total savings and final price
   const totalSavings = useMemo(() => {
@@ -160,7 +168,7 @@ const Checkout = () => {
     return Array.from(discountMap.values());
   }, [productDiscountInfo]);
 
-  if (items.length === 0) {
+  if (availableItems.length === 0) {
     navigate("/customer/cart");
     return null;
   }
@@ -354,7 +362,7 @@ const Checkout = () => {
                 {/* Items with discount info */}
                 <div className="space-y-3 max-h-64 overflow-y-auto">
                   {productDiscountInfo.map((info) => {
-                    const item = items.find((i) => i.product.id === info.productId);
+                    const item = availableItems.find((i) => i.product.id === info.productId);
                     if (!item) return null;
 
                     return (
