@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Edit, Trash2, Eye, RotateCcw } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Eye, RotateCcw, ImagePlus } from "lucide-react";
 import { products, Product } from "@/data/products";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
@@ -38,7 +38,16 @@ const SellerProducts = () => {
   const [productList, setProductList] = useState<Product[]>(products);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setImagePreview(url);
+    }
+  };
 
   const filteredProducts = productList.filter(
     (product) =>
@@ -58,6 +67,7 @@ const SellerProducts = () => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const isReturnable = formData.get("isReturnable") === "on";
+    const productImage = imagePreview || "/placeholder.svg";
     const newProduct: Product = {
       id: `prod-${Date.now()}`,
       name: formData.get("name") as string,
@@ -67,8 +77,8 @@ const SellerProducts = () => {
       category: formData.get("category") as string,
       material: formData.get("material") as string,
       artisanId: "1",
-      image: "/src/assets/products/silk-saree.jpg",
-      images: ["/src/assets/products/silk-saree.jpg"],
+      image: productImage,
+      images: [productImage],
       tags: ["Handmade"],
       inStock: true,
       isReturnable,
@@ -78,6 +88,7 @@ const SellerProducts = () => {
     };
     setProductList([newProduct, ...productList]);
     setIsAddDialogOpen(false);
+    setImagePreview(null);
     toast({
       title: "Product Added",
       description: "Your new product is now listed.",
@@ -167,6 +178,27 @@ const SellerProducts = () => {
                     <Label htmlFor="material">Material</Label>
                     <Input id="material" name="material" required />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <ImagePlus className="h-4 w-4" />
+                    Product Image
+                  </Label>
+                  <Input
+                    type="file"
+                    accept=".jpg,.jpeg,.png"
+                    onChange={handleImageChange}
+                    className="cursor-pointer"
+                  />
+                  {imagePreview && (
+                    <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-border">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center space-x-2">
                   <Switch id="isReturnable" name="isReturnable" defaultChecked />
