@@ -65,9 +65,6 @@ const AdminAwareness = () => {
       category: formData.get("category") as string,
       readTime: Math.ceil(contentText.split(" ").length / 200),
       publishedAt: new Date().toISOString().split("T")[0],
-      authorId: "admin",
-      authorRole: "admin",
-      authorName: "Admin",
     };
     setArticles([newArticle, ...articles]);
     setIsAddDialogOpen(false);
