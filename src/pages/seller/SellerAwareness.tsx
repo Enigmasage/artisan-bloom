@@ -6,7 +6,7 @@ import ArticleCard from "@/components/awareness/ArticleCard";
 import { awarenessArticles, AwarenessArticle } from "@/data/awareness";
 import { useToast } from "@/hooks/use-toast";
 
-const AdminAwareness = () => {
+const SellerAwareness = () => {
   const [articles, setArticles] = useState<AwarenessArticle[]>(awarenessArticles);
   const { toast } = useToast();
 
@@ -29,7 +29,7 @@ const AdminAwareness = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-display font-bold text-foreground">Awareness Articles</h1>
-            <p className="text-muted-foreground mt-1">Manage educational content about handmade crafts and sustainability</p>
+            <p className="text-muted-foreground mt-1">Create and manage your educational articles</p>
           </div>
           <ArticleFormDialog onArticleCreated={handleArticleCreated} />
         </div>
@@ -44,4 +44,4 @@ const AdminAwareness = () => {
   );
 };
 
-export default AdminAwareness;
+export default SellerAwareness;

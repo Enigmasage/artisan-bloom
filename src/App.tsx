@@ -36,6 +36,7 @@ import SellerProducts from "./pages/seller/SellerProducts";
 import SellerOrders from "./pages/seller/SellerOrders";
 import SellerDiscounts from "./pages/seller/SellerDiscounts";
 import SellerReviews from "./pages/seller/SellerReviews";
+import SellerAwareness from "./pages/seller/SellerAwareness";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -98,6 +99,7 @@ const App = () => (
               <Route path="/seller/orders" element={<ProtectedRoute allowedRoles={["seller"]}><SellerOrders /></ProtectedRoute>} />
               <Route path="/seller/discounts" element={<ProtectedRoute allowedRoles={["seller"]}><SellerDiscounts /></ProtectedRoute>} />
               <Route path="/seller/reviews" element={<ProtectedRoute allowedRoles={["seller"]}><SellerReviews /></ProtectedRoute>} />
+              <Route path="/seller/awareness" element={<ProtectedRoute allowedRoles={["seller"]}><SellerAwareness /></ProtectedRoute>} />
 
               {/* Admin Routes */}
               <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
