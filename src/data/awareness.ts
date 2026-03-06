@@ -7,6 +7,9 @@ export interface AwarenessArticle {
   category: string;
   readTime: number;
   publishedAt: string;
+  authorId?: string;
+  authorRole?: "admin" | "seller";
+  authorName?: string;
 }
 
 export const awarenessArticles: AwarenessArticle[] = [

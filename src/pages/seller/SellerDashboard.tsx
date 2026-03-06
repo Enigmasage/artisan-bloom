@@ -26,6 +26,7 @@ import {
   Star,
   Clock,
   Eye,
+  FileText,
 } from "lucide-react";
 import { mockOrders, getOrdersBySeller, getTotalRevenue } from "@/data/orders";
 import { products } from "@/data/products";
@@ -112,7 +113,7 @@ const SellerDashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
           <Link to="/seller/products">
             <Button variant="outline" className="w-full justify-start gap-2 h-auto py-4">
               <Package className="h-5 w-5" />
@@ -146,6 +147,15 @@ const SellerDashboard = () => {
               <div className="text-left">
                 <div className="font-medium">Reviews</div>
                 <div className="text-xs text-muted-foreground">Customer feedback</div>
+              </div>
+            </Button>
+          </Link>
+          <Link to="/seller/awareness">
+            <Button variant="outline" className="w-full justify-start gap-2 h-auto py-4">
+              <FileText className="h-5 w-5" />
+              <div className="text-left">
+                <div className="font-medium">Awareness</div>
+                <div className="text-xs text-muted-foreground">Write articles</div>
               </div>
             </Button>
           </Link>
